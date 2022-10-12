@@ -34,7 +34,7 @@ class NetworkRoutingSolver:
                     selectedEdge = neighbor
 
             if not (selectedEdge is None):
-                path_edges.insert(0, selectedEdge)
+                path_edges.insert(0, (selectedEdge.src.loc, selectedEdge.dest.loc, '{:.0f}'.format(selectedEdge.length)))
                 total_length += selectedEdge.length
             else:
                 print("Something is wrong, line 33")
@@ -63,12 +63,9 @@ class NetworkRoutingSolver:
     def computeShortestPaths(self, srcIndex, use_heap=False):
         self.source = srcIndex
         t1 = time.time()
-        # TODO: RUN DIJKSTRA'S TO DETERMINE SHORTEST PATHS.
-        #       ALSO, STORE THE RESULTS FOR THE SUBSEQUENT
-        #       CALL TO getShortestPath(dest_index)
         self.dist, self.prev = self.dijkstra(self.source)
         t2 = time.time()
-        return (t2 - t1)
+        return t2 - t1
 
     def dijkstra(self, startNode):
         numNodes = len(self.network.nodes)
@@ -77,8 +74,9 @@ class NetworkRoutingSolver:
 
         dist[startNode] = 0
         priorityQueue = ArrayQueue(self.network.nodes)
-        while not priorityQueue.isEmpty():
+        while numNodes > 0:
             currNode = priorityQueue.deletemin(dist)
+            numNodes -= 1
             neighbors = self.network.nodes[currNode].neighbors
             for neighbor in neighbors:
                 neighborID = neighbor.dest.node_id
@@ -117,11 +115,15 @@ class ArrayQueue(Queue):
         pass
 
     def deletemin(self, dist):
-        #  its got the wrong indexes because im deleting it
+        #  you cant start at 0 every time because if dist[0] is the smallest length it will get stuck
         minIndex = 0
+        while self.priorityQueue[minIndex] < 0:
+            minIndex += 1
+
         for node in self.priorityQueue:
-            if dist[node] < dist[minIndex] and node >= 0:
-                minIndex = node
+            if node >= 0:
+                if dist[node] < dist[minIndex] and self.priorityQueue[node] >= 0:
+                    minIndex = node
 
         print("minIndex: " + str(minIndex))
         self.priorityQueue[minIndex] = -1
