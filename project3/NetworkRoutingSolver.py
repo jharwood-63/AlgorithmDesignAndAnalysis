@@ -8,7 +8,8 @@ import math
 
 class NetworkRoutingSolver:
     def __init__(self):
-        pass
+        self.dist = None
+        self.prev = None
 
     def initializeNetwork(self, network):
         assert (type(network) == CS312Graph)
@@ -22,14 +23,41 @@ class NetworkRoutingSolver:
         #       NEED TO USE
         path_edges = []
         total_length = 0
-        node = self.network.nodes[self.source]
-        edges_left = 3
-        while edges_left > 0:
-            edge = node.neighbors[2]
-            path_edges.append((edge.src.loc, edge.dest.loc, '{:.0f}'.format(edge.length)))
-            total_length += edge.length
-            node = edge.dest
-            edges_left -= 1
+        currIndex = self.dest
+
+        while currIndex != self.source:
+            prevNode = self.network.nodes[self.prev[currIndex]]
+            neighbors = prevNode.neighbors
+            selectedEdge = None
+            for neighbor in neighbors:
+                if neighbor.dest.node_id == currIndex:
+                    selectedEdge = neighbor
+
+            if not (selectedEdge is None):
+                path_edges.insert(0, selectedEdge)
+                total_length += selectedEdge.length
+            else:
+                print("Something is wrong, line 33")
+
+            currIndex = prevNode.node_id
+
+
+
+            # find the edge in the prevNode neighbors that connects to current node
+
+
+
+        #  start at the end node, take the edge to the previous
+        #  add the distance to the total, then go to the next previous
+        #  once you get to the start node you are done
+
+        # edges_left = 3
+        # while edges_left > 0:
+        #     edge = node.neighbors[2]
+        #     path_edges.append((edge.src.loc, edge.dest.loc, '{:.0f}'.format(edge.length)))
+        #     total_length += edge.length
+        #     node = edge.dest
+        #     edges_left -= 1
         return {'cost': total_length, 'path': path_edges}
 
     def computeShortestPaths(self, srcIndex, use_heap=False):
@@ -38,21 +66,14 @@ class NetworkRoutingSolver:
         # TODO: RUN DIJKSTRA'S TO DETERMINE SHORTEST PATHS.
         #       ALSO, STORE THE RESULTS FOR THE SUBSEQUENT
         #       CALL TO getShortestPath(dest_index)
-        self.dijkstra(self.source)
+        self.dist, self.prev = self.dijkstra(self.source)
         t2 = time.time()
         return (t2 - t1)
 
     def dijkstra(self, startNode):
-        #  initialize distance and previous arrays to infinity and NULL
-        #  set the index of the start node in distance array to 0
-        #  create the queue -> priorityQueue = Queue(self.network.nodes)
-        #  loop while priority queue is not empty
-        #  delete the shortest distance from the priority queue
-        #  loop all neighbors of current node (returned from deletemin)
-
         numNodes = len(self.network.nodes)
-        dist = [math.inf for i in range(numNodes)]
-        prev = [None for i in range(numNodes)]
+        dist = [math.inf for _ in range(numNodes)]
+        prev = [None for _ in range(numNodes)]
 
         dist[startNode] = 0
         priorityQueue = ArrayQueue(self.network.nodes)
@@ -60,12 +81,13 @@ class NetworkRoutingSolver:
             currNode = priorityQueue.deletemin(dist)
             neighbors = self.network.nodes[currNode].neighbors
             for neighbor in neighbors:
-                
+                neighborID = neighbor.dest.node_id
+                if dist[neighborID] > (dist[currNode] + neighbor.length):
+                    dist[neighborID] = dist[currNode] + neighbor.length
+                    prev[neighborID] = currNode
+                    priorityQueue.decreasekey()
 
-
-
-
-
+        return dist, prev
 
 class Queue:
     def insert(self, node):
@@ -95,17 +117,22 @@ class ArrayQueue(Queue):
         pass
 
     def deletemin(self, dist):
+        #  its got the wrong indexes because im deleting it
         minIndex = 0
         for node in self.priorityQueue:
-            if dist[node] < dist[minIndex]:
+            if dist[node] < dist[minIndex] and node >= 0:
                 minIndex = node
 
-        self.priorityQueue.pop(minIndex)
+        print("minIndex: " + str(minIndex))
+        self.priorityQueue[minIndex] = -1
         return minIndex
 
     def decreasekey(self):
-        #  Not needed for the array
         pass
 
     def isEmpty(self):
-        return not self.priorityQueue
+        for index in self.priorityQueue:
+            if index >= 0:
+                return False
+
+        return True
