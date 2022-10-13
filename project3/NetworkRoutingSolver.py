@@ -52,12 +52,10 @@ class NetworkRoutingSolver:
         prev = [None for _ in range(numNodes)]
 
         dist[startNode] = 0
-        #  priorityQueue = None
         if use_heap:
             priorityQueue = HeapQueue(self.network.nodes, dist)
         else:
             priorityQueue = ArrayQueue(self.network.nodes, dist)
-
 
         while numNodes > 0:
             currNode = priorityQueue.deletemin(dist)
@@ -88,11 +86,9 @@ class HeapQueue(Queue):
         self.makeQueue(nodes, dist)
 
     def makeQueue(self, nodes, dist):
-        # put them all in an array
         for node in nodes:
             self.insert(node)
 
-        # sort them correctly
         for i in range(len(nodes)-1, -1, -1):
             self.siftdown(self.heap[i], i, dist)
 
@@ -106,30 +102,25 @@ class HeapQueue(Queue):
         return 0
 
     def siftdown(self, x, i, dist):
-        #  this is not working
-        minIndex = self.minchild(i, dist)
+        #  find the child with the smallest distance
+        #  if that distance is less than the parent
+        #  switch those two nodes
+        minIndex = self.minchild(i, dist)  # returns index in heap
 
-        while minIndex != 0 and dist[minIndex] < dist[x]:
-            self.heap[i] = minIndex
+        while minIndex != 0 and dist[self.heap[minIndex]] < dist[x]:
+            self.heap[i] = self.heap[minIndex]
+            self.heap[minIndex] = x
             i = minIndex
             minIndex = self.minchild(i, dist)
-
-        self.heap[i] = x
 
     def minchild(self, i, dist):
         if ((2*i) + 1) >= len(self.heap):
             return 0
         else:
-            #  minIndex = min(dist[self.heap[(2*i)+1]], dist[self.heap[(2*i)+2]])
             if dist[self.heap[(2*i)+1]] <= dist[self.heap[(2*i)+2]]:
-                return self.heap[(2*i)+1]
+                return (2*i)+1
             else:
-                return self.heap[(2*i)+2]
-
-            #  return minIndex
-            # return min(dist[j] for j in range((2*i) + 1, min(len(self.heap), (2*i) + 1)))
-
-
+                return (2*i)+2
 
 class ArrayQueue(Queue):
     def __init__(self, nodes, dist):
