@@ -96,7 +96,14 @@ class HeapQueue(Queue):
         self.heap.append(node.node_id)
 
     def deletemin(self, dist):
-        return 0
+        if len(self.heap) == 0:
+            return None
+        else:
+            x = self.heap[0]
+            self.heap.pop(0)
+            # put the last index as the first, then grab the min child
+
+            return x
 
     def decreasekey(self):
         return 0
