@@ -53,9 +53,9 @@ class NetworkRoutingSolver:
 
         dist[startNode] = 0
         if use_heap:
-            priorityQueue = HeapQueue(self.network.nodes, dist)
+            priorityQueue = HeapQueue(self.network.nodes, self.source)
         else:
-            priorityQueue = ArrayQueue(self.network.nodes, dist)
+            priorityQueue = ArrayQueue(self.network.nodes)
 
         while numNodes > 0:
             currNode = priorityQueue.deletemin(dist)
@@ -81,16 +81,18 @@ class Queue:
         pass
 
 class HeapQueue(Queue):
-    def __init__(self, nodes, dist):
+    def __init__(self, nodes, source):
         self.heap = []
-        self.makeQueue(nodes, dist)
+        self.makeQueue(nodes, source)
 
-    def makeQueue(self, nodes, dist):
+    def makeQueue(self, nodes, source):
+        self.heap.append(source)
         for node in nodes:
-            self.insert(node)
+            if node.node_id != source:
+                self.insert(node)
 
-        for i in range(len(nodes)-1, -1, -1):
-            self.siftdown(self.heap[i], i, dist)
+        # for i in range(len(nodes)-1, -1, -1):
+        #     self.siftdown(self.heap[i], i, dist)
 
     def insert(self, node):
         self.heap.append(node.node_id)
@@ -101,9 +103,11 @@ class HeapQueue(Queue):
         else:
             minDist = self.heap[0]
             self.heap.pop(0)
-            self.heap.insert(0, self.heap[len(self.heap) - 1])
-            self.heap.pop(len(self.heap) - 1)
-            self.siftdown(self.heap[0], 0, dist)
+            if len(self.heap) > 1:
+                self.heap.insert(0, self.heap[len(self.heap) - 1])
+                self.heap.pop(len(self.heap) - 1)
+                self.siftdown(self.heap[0], 0, dist)
+
             return minDist
 
     def decreasekey(self, dist, x):
@@ -112,7 +116,7 @@ class HeapQueue(Queue):
 
     def bubbleup(self, x, i, dist):
         p = i // 2
-        while i != 1 and dist[self.heap[p]] > dist[x]:
+        while i > 0 and dist[self.heap[p]] > dist[x]:
             self.heap[i] = self.heap[p]
             self.heap[p] = x
             i = p
@@ -128,7 +132,7 @@ class HeapQueue(Queue):
             minIndex = self.minchild(i, dist)
 
     def minchild(self, i, dist):
-        if ((2*i) + 1) >= len(self.heap):
+        if ((2*i) + 2) >= len(self.heap):
             return 0
         else:
             if dist[self.heap[(2*i)+1]] <= dist[self.heap[(2*i)+2]]:
@@ -137,7 +141,7 @@ class HeapQueue(Queue):
                 return (2*i)+2
 
 class ArrayQueue(Queue):
-    def __init__(self, nodes, dist):
+    def __init__(self, nodes):
         self.priorityQueue = []
         for node in nodes:
             self.insert(node.node_id)
@@ -155,7 +159,7 @@ class ArrayQueue(Queue):
                 if dist[node] < dist[minIndex] and self.priorityQueue[node] >= 0:
                     minIndex = node
 
-        print("minIndex: " + str(minIndex))
+        # print("minIndex: " + str(minIndex))
         self.priorityQueue[minIndex] = -1
         return minIndex
 
