@@ -66,7 +66,7 @@ class NetworkRoutingSolver:
                 if dist[neighborID] > (dist[currNode] + neighbor.length):
                     dist[neighborID] = dist[currNode] + neighbor.length
                     prev[neighborID] = currNode
-                    priorityQueue.decreasekey()
+                    priorityQueue.decreasekey(dist, neighborID)
 
         return dist, prev
 
@@ -77,7 +77,7 @@ class Queue:
     def deletemin(self, dist):
         pass
 
-    def decreasekey(self):
+    def decreasekey(self, dist, x):
         pass
 
 class HeapQueue(Queue):
@@ -99,19 +99,26 @@ class HeapQueue(Queue):
         if len(self.heap) == 0:
             return None
         else:
-            x = self.heap[0]
+            minDist = self.heap[0]
             self.heap.pop(0)
-            # put the last index as the first, then grab the min child
+            self.heap.insert(0, self.heap[len(self.heap) - 1])
+            self.heap.pop(len(self.heap) - 1)
+            self.siftdown(self.heap[0], 0, dist)
+            return minDist
 
-            return x
+    def decreasekey(self, dist, x):
+        self.bubbleup(x, self.heap.index(x), dist)
+        #  return 0
 
-    def decreasekey(self):
-        return 0
+    def bubbleup(self, x, i, dist):
+        p = i // 2
+        while i != 1 and dist[self.heap[p]] > dist[x]:
+            self.heap[i] = self.heap[p]
+            self.heap[p] = x
+            i = p
+            p = i // 2
 
     def siftdown(self, x, i, dist):
-        #  find the child with the smallest distance
-        #  if that distance is less than the parent
-        #  switch those two nodes
         minIndex = self.minchild(i, dist)  # returns index in heap
 
         while minIndex != 0 and dist[self.heap[minIndex]] < dist[x]:
@@ -152,5 +159,5 @@ class ArrayQueue(Queue):
         self.priorityQueue[minIndex] = -1
         return minIndex
 
-    def decreasekey(self):
+    def decreasekey(self, dist, x):
         pass
