@@ -98,9 +98,12 @@ class HeapQueue(Queue):
         self.heap.append(node.node_id)
 
     def deletemin(self, dist):
+        # print("In deletemin\n")
         if len(self.heap) == 0:
+            # print("The heap is empty, that's not good \n")
             return None
         else:
+            # print("removing " + str(self.heap[0]) + "\n")
             minDist = self.heap[0]
             self.heap.pop(0)
             if len(self.heap) > 1:
@@ -111,10 +114,17 @@ class HeapQueue(Queue):
             return minDist
 
     def decreasekey(self, dist, x):
-        self.bubbleup(x, self.heap.index(x), dist)
+        # print("In decreasekey")
+        # print("x: " + str(x))
+        try:
+            self.bubbleup(x, self.heap.index(x), dist)
+        except ValueError:
+            pass
+            # print("ValueError line 120")
         #  return 0
 
     def bubbleup(self, x, i, dist):
+        # print("In bubbleup")
         p = i // 2
         while i > 0 and dist[self.heap[p]] > dist[x]:
             self.heap[i] = self.heap[p]
@@ -123,6 +133,7 @@ class HeapQueue(Queue):
             p = i // 2
 
     def siftdown(self, x, i, dist):
+        # print("In siftdown\n")
         minIndex = self.minchild(i, dist)  # returns index in heap
 
         while minIndex != 0 and dist[self.heap[minIndex]] < dist[x]:
@@ -132,6 +143,7 @@ class HeapQueue(Queue):
             minIndex = self.minchild(i, dist)
 
     def minchild(self, i, dist):
+        # print("In minchild\n")
         if ((2*i) + 2) >= len(self.heap):
             return 0
         else:
