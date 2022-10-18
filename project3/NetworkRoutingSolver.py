@@ -22,20 +22,26 @@ class NetworkRoutingSolver:
         currIndex = self.dest
 
         while currIndex != self.source:
-            prevNode = self.network.nodes[self.prev[currIndex]]
-            neighbors = prevNode.neighbors
-            selectedEdge = None
-            for neighbor in neighbors:
-                if neighbor.dest.node_id == currIndex:
-                    selectedEdge = neighbor
+            prevIndex = self.prev[currIndex]
+            if prevIndex is not None:
+                prevNode = self.network.nodes[self.prev[currIndex]]
+                neighbors = prevNode.neighbors
+                selectedEdge = None
+                for neighbor in neighbors:
+                    if neighbor.dest.node_id == currIndex:
+                        selectedEdge = neighbor
 
-            if not (selectedEdge is None):
-                path_edges.insert(0, (selectedEdge.src.loc, selectedEdge.dest.loc, '{:.0f}'.format(selectedEdge.length)))
-                total_length += selectedEdge.length
+                if not (selectedEdge is None):
+                    path_edges.insert(0, (selectedEdge.src.loc, selectedEdge.dest.loc, '{:.0f}'.format(selectedEdge.length)))
+                    total_length += selectedEdge.length
+                else:
+                    print("Something is wrong, line 33")
+
+                currIndex = prevNode.node_id
             else:
-                print("Something is wrong, line 33")
-
-            currIndex = prevNode.node_id
+                # print("unreachable")
+                total_length = math.inf
+                break
 
         return {'cost': total_length, 'path': path_edges}
 
@@ -53,12 +59,20 @@ class NetworkRoutingSolver:
 
         dist[startNode] = 0
         if use_heap:
-            priorityQueue = HeapQueue(self.network.nodes, self.source)
+            # t3 = time.time()
+            priorityQueue = HeapQueue(self.network.nodes, dist)
+            # t4 = time.time()
+            # print("makeQueue: " + str(t4-t3))
         else:
             priorityQueue = ArrayQueue(self.network.nodes)
 
         while numNodes > 0:
+            # t5 = time.time()
             currNode = priorityQueue.deletemin(dist)
+            # t6 = time.time()
+            # print("deletemin: " + str(t6-t5))
+            if numNodes % 1000 == 0:
+                print("numNodes: " + str(numNodes))
             numNodes -= 1
             neighbors = self.network.nodes[currNode].neighbors
             for neighbor in neighbors:
@@ -66,33 +80,26 @@ class NetworkRoutingSolver:
                 if dist[neighborID] > (dist[currNode] + neighbor.length):
                     dist[neighborID] = dist[currNode] + neighbor.length
                     prev[neighborID] = currNode
+                    # t7 = time.time()
                     priorityQueue.decreasekey(dist, neighborID)
+                    # t8 = time.time()
+                    # print("decreasekey: " + str(t8-t7))
 
         return dist, prev
 
-class Queue:
-    def insert(self, node):
-        pass
-
-    def deletemin(self, dist):
-        pass
-
-    def decreasekey(self, dist, x):
-        pass
-
-class HeapQueue(Queue):
-    def __init__(self, nodes, source):
+class HeapQueue:
+    def __init__(self, nodes, dist):
+        # self.startIndex = 0
         self.heap = []
-        self.makeQueue(nodes, source)
+        self.makeQueue(nodes, dist)
 
-    def makeQueue(self, nodes, source):
-        self.heap.append(source)
+    def makeQueue(self, nodes, dist):
+        # print("in makequeue")
         for node in nodes:
-            if node.node_id != source:
-                self.insert(node)
+            self.heap.append(node.node_id)
 
-        # for i in range(len(nodes)-1, -1, -1):
-        #     self.siftdown(self.heap[i], i, dist)
+        for i in range(len(nodes)-1, -1, -1):
+            self.siftdown(self.heap[i], i, dist)
 
     def insert(self, node):
         self.heap.append(node.node_id)
@@ -105,10 +112,11 @@ class HeapQueue(Queue):
         else:
             # print("removing " + str(self.heap[0]) + "\n")
             minDist = self.heap[0]
+            # self.startIndex += 1
             self.heap.pop(0)
             if len(self.heap) > 1:
                 self.heap.insert(0, self.heap[len(self.heap) - 1])
-                self.heap.pop(len(self.heap) - 1)
+                self.heap.pop()
                 self.siftdown(self.heap[0], 0, dist)
 
             return minDist
@@ -121,7 +129,6 @@ class HeapQueue(Queue):
         except ValueError:
             pass
             # print("ValueError line 120")
-        #  return 0
 
     def bubbleup(self, x, i, dist):
         # print("In bubbleup")
@@ -143,20 +150,23 @@ class HeapQueue(Queue):
             minIndex = self.minchild(i, dist)
 
     def minchild(self, i, dist):
-        # print("In minchild\n")
-        if ((2*i) + 2) >= len(self.heap):
-            return 0
-        else:
-            if dist[self.heap[(2*i)+1]] <= dist[self.heap[(2*i)+2]]:
-                return (2*i)+1
+        firstChildIdx = (2*i)+1
+        secondChildIdx = (2*i)+2
+        if secondChildIdx >= len(self.heap) and firstChildIdx >= len(self.heap):
+            return 0  # no children
+        elif secondChildIdx >= len(self.heap):
+            return firstChildIdx  # only one child
+        else:  # both children
+            if dist[self.heap[firstChildIdx]] <= dist[self.heap[secondChildIdx]]:
+                return firstChildIdx
             else:
-                return (2*i)+2
+                return secondChildIdx
 
-class ArrayQueue(Queue):
+class ArrayQueue:
     def __init__(self, nodes):
         self.priorityQueue = []
         for node in nodes:
-            self.insert(node.node_id)
+            self.priorityQueue.append(node.node_id)
 
     def insert(self, node):
         self.priorityQueue.append(node)
@@ -167,11 +177,9 @@ class ArrayQueue(Queue):
             minIndex += 1
 
         for node in self.priorityQueue:
-            if node >= 0:
-                if dist[node] < dist[minIndex] and self.priorityQueue[node] >= 0:
-                    minIndex = node
+            if dist[node] < dist[minIndex] and node >= 0:
+                minIndex = node
 
-        # print("minIndex: " + str(minIndex))
         self.priorityQueue[minIndex] = -1
         return minIndex
 
