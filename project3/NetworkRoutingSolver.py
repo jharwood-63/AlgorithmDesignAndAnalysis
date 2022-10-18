@@ -39,7 +39,6 @@ class NetworkRoutingSolver:
 
                 currIndex = prevNode.node_id
             else:
-                # print("unreachable")
                 total_length = math.inf
                 break
 
@@ -48,119 +47,95 @@ class NetworkRoutingSolver:
     def computeShortestPaths(self, srcIndex, use_heap=False):
         self.source = srcIndex
         t1 = time.time()
-        self.dist, self.prev = self.dijkstra(self.source, use_heap)
+        self.dist = []
+        self.prev = []
+        self.dijkstra(self.source, use_heap)
         t2 = time.time()
         return t2 - t1
 
-    def dijkstra(self, startNode, use_heap):
+    def dijkstra(self, startNode, use_heap):  # Heap: O(nlog2(n)), Array: O(n^2)
         numNodes = len(self.network.nodes)
-        dist = [math.inf for _ in range(numNodes)]
-        prev = [None for _ in range(numNodes)]
+        self.dist = [math.inf for _ in range(numNodes)]  # O(n)
+        self.prev = [None for _ in range(numNodes)]  # O(n)
 
-        dist[startNode] = 0
+        self.dist[startNode] = 0
         if use_heap:
-            # t3 = time.time()
-            priorityQueue = HeapQueue(self.network.nodes, dist)
-            # t4 = time.time()
-            # print("makeQueue: " + str(t4-t3))
+            priorityQueue = HeapQueue(self.network.nodes, self.source)  # O(n)
         else:
-            priorityQueue = ArrayQueue(self.network.nodes)
+            priorityQueue = ArrayQueue(self.network.nodes)  # O(n)
 
-        while numNodes > 0:
-            # t5 = time.time()
-            currNode = priorityQueue.deletemin(dist)
-            # t6 = time.time()
-            # print("deletemin: " + str(t6-t5))
-            if numNodes % 1000 == 0:
-                print("numNodes: " + str(numNodes))
+        while numNodes > 0:  # O(n)
+            currNode = priorityQueue.deletemin(self.dist)  # O(log n) for heap, O(n) for array
             numNodes -= 1
             neighbors = self.network.nodes[currNode].neighbors
-            for neighbor in neighbors:
+            for neighbor in neighbors:  # O(3)
                 neighborID = neighbor.dest.node_id
-                if dist[neighborID] > (dist[currNode] + neighbor.length):
-                    dist[neighborID] = dist[currNode] + neighbor.length
-                    prev[neighborID] = currNode
-                    # t7 = time.time()
-                    priorityQueue.decreasekey(dist, neighborID)
-                    # t8 = time.time()
-                    # print("decreasekey: " + str(t8-t7))
-
-        return dist, prev
+                if self.dist[neighborID] > (self.dist[currNode] + neighbor.length):
+                    self.dist[neighborID] = self.dist[currNode] + neighbor.length
+                    self.prev[neighborID] = currNode
+                    priorityQueue.decreasekey(self.dist, neighborID)  # O(log2(n)) for heap, O(1) for array
 
 class HeapQueue:
-    def __init__(self, nodes, dist):
-        # self.startIndex = 0
+    def __init__(self, nodes, startNode):
         self.heap = []
-        self.makeQueue(nodes, dist)
+        self.makeQueue(nodes, startNode)
 
-    def makeQueue(self, nodes, dist):
-        # print("in makequeue")
+    def makeQueue(self, nodes, startNode):
+        self.heap.append(startNode)
         for node in nodes:
-            self.heap.append(node.node_id)
-
-        for i in range(len(nodes)-1, -1, -1):
-            self.siftdown(self.heap[i], i, dist)
+            nodeId = node.node_id
+            if nodeId != startNode:
+                self.heap.append(nodeId)
 
     def insert(self, node):
         self.heap.append(node.node_id)
 
     def deletemin(self, dist):
-        # print("In deletemin\n")
         if len(self.heap) == 0:
-            # print("The heap is empty, that's not good \n")
             return None
         else:
-            # print("removing " + str(self.heap[0]) + "\n")
             minDist = self.heap[0]
-            # self.startIndex += 1
-            self.heap.pop(0)
-            if len(self.heap) > 1:
-                self.heap.insert(0, self.heap[len(self.heap) - 1])
-                self.heap.pop()
-                self.siftdown(self.heap[0], 0, dist)
+            self.siftdown(self.heap[-1], 0, dist)
+            self.heap.pop()
 
             return minDist
 
     def decreasekey(self, dist, x):
-        # print("In decreasekey")
-        # print("x: " + str(x))
         try:
-            self.bubbleup(x, self.heap.index(x), dist)
+            self.bubbleup(x, self.heap.index(x), dist)  # O(log2(n))
         except ValueError:
             pass
-            # print("ValueError line 120")
 
     def bubbleup(self, x, i, dist):
-        # print("In bubbleup")
         p = i // 2
         while i > 0 and dist[self.heap[p]] > dist[x]:
             self.heap[i] = self.heap[p]
-            self.heap[p] = x
             i = p
             p = i // 2
 
-    def siftdown(self, x, i, dist):
-        # print("In siftdown\n")
-        minIndex = self.minchild(i, dist)  # returns index in heap
+        self.heap[i] = x
 
-        while minIndex != 0 and dist[self.heap[minIndex]] < dist[x]:
+    def siftdown(self, x, i, dist):
+        minIndex = self.minchild(i, dist)  # returns index in heap
+        while minIndex >= 0 and dist[self.heap[minIndex]] < dist[x]:
             self.heap[i] = self.heap[minIndex]
-            self.heap[minIndex] = x
             i = minIndex
             minIndex = self.minchild(i, dist)
+
+        self.heap[i] = x
 
     def minchild(self, i, dist):
         firstChildIdx = (2*i)+1
         secondChildIdx = (2*i)+2
-        if secondChildIdx >= len(self.heap) and firstChildIdx >= len(self.heap):
-            return 0  # no children
-        elif secondChildIdx >= len(self.heap):
-            return firstChildIdx  # only one child
-        else:  # both children
-            if dist[self.heap[firstChildIdx]] <= dist[self.heap[secondChildIdx]]:
+        if secondChildIdx < len(self.heap) and firstChildIdx < len(self.heap):
+            if dist[self.heap[firstChildIdx]] < dist[self.heap[secondChildIdx]]:
                 return firstChildIdx
             else:
                 return secondChildIdx
+        elif firstChildIdx < len(self.heap):
+            return firstChildIdx
+        else:
+            return -1
 
 class ArrayQueue:
     def __init__(self, nodes):
