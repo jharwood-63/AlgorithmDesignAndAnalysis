@@ -167,13 +167,14 @@ class ArrayQueue:
         self.priorityQueue.append(node)
 
     def deletemin(self, dist):
-        minIndex = 0
-        while self.priorityQueue[minIndex] < 0:
-            minIndex += 1
+        minIndex = -1
 
         for node in self.priorityQueue:
-            if dist[node] < dist[minIndex] and node >= 0:
+            if minIndex == -1:
                 minIndex = node
+            if node != -1:
+                if dist[node] < dist[minIndex] and node >= 0:
+                    minIndex = node
 
         self.priorityQueue[minIndex] = -1
         return minIndex
