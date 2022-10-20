@@ -94,7 +94,7 @@ class HeapQueue:
 
             index += 1
 
-    def insert(self, node, dist):  # O(log2(n))
+    def insert(self, node, dist):  # O(log(n))
         self.heap.append(node.node_id)
         self.bubbleup(node.node_id, (len(self.heap) - 1), dist)
 
@@ -144,7 +144,6 @@ class HeapQueue:
             minIndex = self.minchild(i, dist)
 
     def minchild(self, i, dist):
-        # print("in minchild")
         firstChildIdx = (2*i)+1
         secondChildIdx = (2*i)+2
         if secondChildIdx < len(self.heap) and firstChildIdx < len(self.heap):
