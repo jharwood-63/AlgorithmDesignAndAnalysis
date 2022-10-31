@@ -49,21 +49,27 @@ class GeneSequencing:
 			for j in range(1, (len(seq1) + 1)):
 				equality = seq2[i-1] == seq1[j-1]
 				if equality:
-					diagonal = 1 + alignmentTable[i-1][j-1]
-				else:
 					diagonal = alignmentTable[i-1][j-1] - 3
+				else:
+					diagonal = 1 + alignmentTable[i-1][j-1]
 
 				left = 5 + alignmentTable[i][j-1]
 				top = 5 + alignmentTable[i-1][j]
 
 				if left <= diagonal and left <= top:
 					print("left")
+					alignmentTable[i][j] = left
+					path.append("l")
 				elif top <= diagonal and top < left:
 					print("top")
+					alignmentTable[i][j] = top
+					path.append("t")
 				elif diagonal < left and diagonal < top:
 					print("diagonal")
+					alignmentTable[i][j] = diagonal
+					path.append("d")
 
-
+		# The score is tracked when you go back to create the path
 
 		alignment1 = 'abc-easy  DEBUG:({} chars,align_len={}{})'.format(
 			len(seq1), align_length, ',BANDED' if banded else '')
