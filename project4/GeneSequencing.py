@@ -29,24 +29,34 @@ class GeneSequencing:
 # you whether you should compute a banded alignment or full alignment, and _align_length_ tells you 
 # how many base pairs to use in computing the alignment
 
-	def align( self, seq1, seq2, banded, align_length):
+	def align(self, seq1, seq2, banded, align_length):
 		self.banded = banded
 		self.MaxCharactersToAlign = align_length
 
 ###################################################################################################
 # your code should replace these three statements and populate the three variables: score, alignment1 and alignment2
+		if len(seq1) > align_length:
+			seq1Length = align_length + 1
+		else:
+			seq1Length = len(seq1) + 1
+
+		if len(seq2) > align_length:
+			seq2Length = align_length + 1
+		else:
+			seq2Length = len(seq2) + 1
+
 		score = 0
-		alignmentTable = [[0] * (len(seq2) + 1) for _ in range(len(seq1) + 1)]
-		path = [[""] * (len(seq2) + 1) for _ in range(len(seq1) + 1)]
+		alignmentTable = [[0] * seq1Length for _ in range(seq2Length)]
+		path = [[""] * seq1Length for _ in range(seq2Length)]
 
-		for i in range(len(seq2) + 1):
-			alignmentTable[i][0] = i
+		for i in range(seq2Length):
+			alignmentTable[i][0] = i * 5
 
-		for j in range(len(seq1) + 1):
-			alignmentTable[0][j] = j
+		for j in range(seq1Length):
+			alignmentTable[0][j] = j * 5
 
-		for i in range(1, (len(seq2) + 1)):
-			for j in range(1, (len(seq1) + 1)):
+		for i in range(1, seq2Length):
+			for j in range(1, seq1Length):
 				equality = seq2[i-1] == seq1[j-1]
 				if equality:
 					diagonal = alignmentTable[i-1][j-1] - 3
@@ -57,15 +67,12 @@ class GeneSequencing:
 				top = 5 + alignmentTable[i-1][j]
 
 				if left <= diagonal and left <= top:
-					print("left")
 					alignmentTable[i][j] = left
 					path[i][j] = "l"
 				elif top <= diagonal and top < left:
-					print("top")
 					alignmentTable[i][j] = top
 					path[i][j] = "t"
 				elif diagonal < left and diagonal < top:
-					print("diagonal")
 					alignmentTable[i][j] = diagonal
 					if equality:
 						path[i][j] = "e"
@@ -73,34 +80,44 @@ class GeneSequencing:
 						path[i][j] = "s"
 
 		# The score is tracked when you go back to create the path
-
-
-		vertIndex= len(seq2)
-		horizIndex = len(seq1)
-		currIndex = len(seq2) - 1
-		for i in range(len(path), -1, -1):
-			if path[i] == "l":  # insert
-				seq2[currIndex] = seq1[horizLetter]
+		vertIndex = seq2Length - 1
+		horizIndex = seq1Length - 1
+		seq2Index = seq2Length - 2
+		seq1Index = seq1Length - 2
+		alignment1 = ""
+		alignment2 = ""
+		for i in range(len(seq2)):
+			if path[vertIndex][horizIndex] == "l":  # insert
+				alignment2 = alignment2 + seq1[seq1Index]
+				alignment1 = alignment1 + "_"
 				score += 5
-				horizLetter -= 1
-			elif path[i] == "t":  # delete
-				seq2[currIndex] = "_"
+				horizIndex -= 1
+				seq1Index -= 1
+			elif path[vertIndex][horizIndex] == "t":  # delete
+				alignment2 = alignment2 + "_"
+				alignment1 = alignment1 + seq2[seq2Index]
 				score += 5
-			elif path[i] == "s":  # swap
-				seq2[currIndex] = seq1[horizLetter]
+				vertIndex -= 1
+				seq2Index -= 1
+			elif path[vertIndex][horizIndex] == "s":  # swap
+				alignment2 = alignment2 + seq1[seq1Index]
+				alignment1 = alignment1 + seq2[seq2Index]
 				score += 1
-				horizLetter -= 1
-			elif path[i] == "e":  # leave it
+				horizIndex -= 1
+				vertIndex -= 1
+				seq1Index -= 1
+				seq2Index -= 1
+			elif path[vertIndex][horizIndex] == "e":  # leave it
+				alignment2 = alignment2 + seq2[seq2Index]
+				alignment1 = alignment1 + seq1[seq1Index]
 				score -= 3
-				horizLetter -= 1
+				horizIndex -= 1
+				vertIndex -= 1
+				seq1Index -= 1
+				seq2Index -= 1
 
-			currIndex -= 1
-
-
-		alignment1 = 'abc-easy  DEBUG:({} chars,align_len={}{})'.format(
-			len(seq1), align_length, ',BANDED' if banded else '')
-		alignment2 = 'as-123--  DEBUG:({} chars,align_len={}{})'.format(
-			len(seq2), align_length, ',BANDED' if banded else '')
+		alignment1 = alignment1[::-1]
+		alignment2 = alignment2[::-1]
 ###################################################################################################					
 		
 		return {'align_cost':score, 'seqi_first100':alignment1, 'seqj_first100':alignment2}
