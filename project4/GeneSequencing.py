@@ -36,8 +36,8 @@ class GeneSequencing:
 ###################################################################################################
 # your code should replace these three statements and populate the three variables: score, alignment1 and alignment2
 		score = 0
-		alignmentTable = [[0] * (len(seq2) + 1) for i in range(len(seq1) + 1)]
-		path = []
+		alignmentTable = [[0] * (len(seq2) + 1) for _ in range(len(seq1) + 1)]
+		path = [[""] * (len(seq2) + 1) for _ in range(len(seq1) + 1)]
 
 		for i in range(len(seq2) + 1):
 			alignmentTable[i][0] = i
@@ -59,17 +59,43 @@ class GeneSequencing:
 				if left <= diagonal and left <= top:
 					print("left")
 					alignmentTable[i][j] = left
-					path.append("l")
+					path[i][j] = "l"
 				elif top <= diagonal and top < left:
 					print("top")
 					alignmentTable[i][j] = top
-					path.append("t")
+					path[i][j] = "t"
 				elif diagonal < left and diagonal < top:
 					print("diagonal")
 					alignmentTable[i][j] = diagonal
-					path.append("d")
+					if equality:
+						path[i][j] = "e"
+					else:
+						path[i][j] = "s"
 
 		# The score is tracked when you go back to create the path
+
+
+		vertIndex= len(seq2)
+		horizIndex = len(seq1)
+		currIndex = len(seq2) - 1
+		for i in range(len(path), -1, -1):
+			if path[i] == "l":  # insert
+				seq2[currIndex] = seq1[horizLetter]
+				score += 5
+				horizLetter -= 1
+			elif path[i] == "t":  # delete
+				seq2[currIndex] = "_"
+				score += 5
+			elif path[i] == "s":  # swap
+				seq2[currIndex] = seq1[horizLetter]
+				score += 1
+				horizLetter -= 1
+			elif path[i] == "e":  # leave it
+				score -= 3
+				horizLetter -= 1
+
+			currIndex -= 1
+
 
 		alignment1 = 'abc-easy  DEBUG:({} chars,align_len={}{})'.format(
 			len(seq1), align_length, ',BANDED' if banded else '')
