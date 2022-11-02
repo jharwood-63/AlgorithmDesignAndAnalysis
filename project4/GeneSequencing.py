@@ -36,61 +36,68 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 		currIndex += 1
 
 	if len(seq1) < len(seq2):
-		bottomRightStart = 3 + (len(seq2) - len(seq1))
+		bottomRightStart = len(seq1) - (2 + (len(seq2) - len(seq1)))
 	elif len(seq1) > len(seq2):
-		bottomRightStart = 3 - (len(seq2) - len(seq1))
+		bottomRightStart = len(seq1) - (2 - (len(seq2) - len(seq1)))
 	else:
-		bottomRightStart = 3
+		bottomRightStart = len(seq1) - 2
 
 	startIndex = 3
 	endIndex = 5
+	offsetStart = 1
+	offset = 1
 	for i in range(1, seq2Length):
 		currIndex = startIndex
-		while currIndex < endIndex:
-			#  at some point you need to start subtracting from the endIndex
-			#  how do you access the strings at the correct indices
-			#  for seq2 use i
-			#  for seq1
-			#  if i <= 4 -> currIndex - startIndex
-			#  else -> currIndex + startIndex
-
-			if i >= bottomRightStart and currIndex == endIndex:
-				break
-
-			if i <= 4:
-				seq1Index = currIndex - startIndex
+		while currIndex < 7:
+			if i >= bottomRightStart and currIndex > endIndex:
+				currIndex += 1
+				continue
 			else:
-				seq1Index = currIndex + startIndex
-
-			equality = seq2[i - 1] == seq1[seq1Index]
-			if equality:
-				diagonal = MATCH + alignmentTable[i-1][currIndex]
-			else:
-				diagonal = INDEL + alignmentTable[i-1][currIndex]
-
-			if currIndex > 0:
-				left = INDEL + alignmentTable[i][currIndex - 1]
-			else:
-				left = math.inf
-
-			if (currIndex + 1) < 6:
-				top = INDEL + alignmentTable[i-1][currIndex + 1]
-			else:
-				top = math.inf
-
-			if left <= diagonal and left <= top:
-				alignmentTable[i][currIndex] = left
-				path[i][currIndex] = "l"
-			elif top <= diagonal and top < left:
-				alignmentTable[i][currIndex] = top
-				path[i][currIndex] = "t"
-			elif diagonal < left and diagonal < top:
-				alignmentTable[i][currIndex] = diagonal
-				if equality:
-					path[i][currIndex] = "e"
+				if i <= 4:
+					seq1Index = currIndex - startIndex
 				else:
-					path[i][currIndex] = "s"
+					seq1Index = offset
+					offset += 1
 
+				equality = seq2[i - 1] == seq1[seq1Index]
+				if equality:
+					diagonal = MATCH + alignmentTable[i-1][currIndex]
+				else:
+					diagonal = INDEL + alignmentTable[i-1][currIndex]
+
+				if currIndex > 0:
+					left = INDEL + alignmentTable[i][currIndex - 1]
+				else:
+					left = math.inf
+
+				if (currIndex + 1) < 6:
+					top = INDEL + alignmentTable[i-1][currIndex + 1]
+				else:
+					top = math.inf
+
+				if left <= diagonal and left <= top:
+					alignmentTable[i][currIndex] = left
+					path[i][currIndex] = "l"
+				elif top <= diagonal and top < left:
+					alignmentTable[i][currIndex] = top
+					path[i][currIndex] = "t"
+				elif diagonal < left and diagonal < top:
+					alignmentTable[i][currIndex] = diagonal
+					if equality:
+						path[i][currIndex] = "e"
+					else:
+						path[i][currIndex] = "s"
+				currIndex += 1
+
+		if i >= bottomRightStart:
+			endIndex -= 1
+
+		if i > 4:
+			offsetStart += 1
+			offset = offsetStart
+
+		if startIndex != 0:
+			startIndex -= 1
 
 
 	return 0, "", ""
