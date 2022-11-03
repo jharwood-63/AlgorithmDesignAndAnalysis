@@ -35,13 +35,7 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 		alignmentTable[i][currIndex] = i * 5
 		currIndex += 1
 
-	if len(seq1) < len(seq2):
-		bottomRightStart = len(seq1) - (2 + (len(seq2) - len(seq1)))
-	elif len(seq1) > len(seq2):
-		bottomRightStart = len(seq1) - (2 - (len(seq2) - len(seq1)))
-	else:
-		bottomRightStart = len(seq1) - 2
-
+	bottomRightStart = seq1Length - 3
 	startIndex = 3
 	endIndex = 5
 	offsetStart = 1
@@ -50,7 +44,7 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 		currIndex = startIndex
 		while currIndex < 7:
 			if i >= bottomRightStart and currIndex > endIndex:
-				currIndex += 1
+				currIndex += 7
 				continue
 			else:
 				if i <= 4:
@@ -63,14 +57,14 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 				if equality:
 					diagonal = MATCH + alignmentTable[i-1][currIndex]
 				else:
-					diagonal = INDEL + alignmentTable[i-1][currIndex]
+					diagonal = SUB + alignmentTable[i-1][currIndex]
 
 				if currIndex > 0:
 					left = INDEL + alignmentTable[i][currIndex - 1]
 				else:
 					left = math.inf
 
-				if (currIndex + 1) < 6:
+				if (currIndex + 1) < 7:
 					top = INDEL + alignmentTable[i-1][currIndex + 1]
 				else:
 					top = math.inf
@@ -99,8 +93,48 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 		if startIndex != 0:
 			startIndex -= 1
 
+	vertIndex = seq2Length - 1
+	horizIndex = 3
+	seq2Index = seq2Length - 2
+	seq1Index = seq1Length - 2
+	alignment1 = ""
+	alignment2 = ""
+	for i in range(len(seq2)):
+		if path[vertIndex][horizIndex] == "l":  # insert
+			alignment2 = alignment2 + "-"
+			alignment1 = alignment1 + seq1[seq1Index]
+			score += 5
+			horizIndex -= 1
+			seq1Index -= 1
+		elif path[vertIndex][horizIndex] == "t":  # delete
+			alignment2 = alignment2 + seq2[seq2Index]
+			alignment1 = alignment1 + "-"
+			score += 5
+			vertIndex -= 1
+			horizIndex += 1
+			seq2Index -= 1
+		elif path[vertIndex][horizIndex] == "s":  # swap
+			alignment2 = alignment2 + seq2[seq2Index]
+			alignment1 = alignment1 + seq1[seq1Index]
+			score += 1
+			vertIndex -= 1
+			seq1Index -= 1
+			seq2Index -= 1
+		elif path[vertIndex][horizIndex] == "e":  # leave it
+			alignment2 = alignment2 + seq2[seq2Index]
+			alignment1 = alignment1 + seq1[seq1Index]
+			score -= 3
+			vertIndex -= 1
+			seq1Index -= 1
+			seq2Index -= 1
 
-	return 0, "", ""
+	alignment1 = alignment1[::-1]
+	alignment2 = alignment2[::-1]
+
+	alignment1 = alignment1[0:100]
+	alignment2 = alignment2[0:100]
+
+	return score, alignment1, alignment2
 
 
 def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
@@ -109,21 +143,21 @@ def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
 	path = [[""] * seq1Length for _ in range(seq2Length)]
 
 	for i in range(seq2Length):
-		alignmentTable[i][0] = i * 5
+		alignmentTable[i][0] = i * INDEL
 
 	for j in range(seq1Length):
-		alignmentTable[0][j] = j * 5
+		alignmentTable[0][j] = j * INDEL
 
 	for i in range(1, seq2Length):
 		for j in range(1, seq1Length):
 			equality = seq2[i - 1] == seq1[j - 1]
 			if equality:
-				diagonal = alignmentTable[i - 1][j - 1] - 3
+				diagonal = MATCH + alignmentTable[i - 1][j - 1]
 			else:
-				diagonal = 1 + alignmentTable[i - 1][j - 1]
+				diagonal = SUB + alignmentTable[i - 1][j - 1]
 
-			left = 5 + alignmentTable[i][j - 1]
-			top = 5 + alignmentTable[i - 1][j]
+			left = INDEL + alignmentTable[i][j - 1]
+			top = INDEL + alignmentTable[i - 1][j]
 
 			if left <= diagonal and left <= top:
 				alignmentTable[i][j] = left
@@ -138,6 +172,11 @@ def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
 				else:
 					path[i][j] = "s"
 
+	# insertion -> - in alignment 2, character in alignment 1
+	# deletion -> - in alignment 1, character in alignment 2
+	# swap -> keep both characters
+	# equal -> keep both characters
+
 	# The score is tracked when you go back to create the path
 	vertIndex = seq2Length - 1
 	horizIndex = seq1Length - 1
@@ -147,20 +186,20 @@ def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
 	alignment2 = ""
 	for i in range(len(seq2)):
 		if path[vertIndex][horizIndex] == "l":  # insert
-			alignment2 = alignment2 + seq1[seq1Index]
-			alignment1 = alignment1 + "_"
+			alignment2 = alignment2 + "-"
+			alignment1 = alignment1 + seq1[seq1Index]
 			score += 5
 			horizIndex -= 1
 			seq1Index -= 1
 		elif path[vertIndex][horizIndex] == "t":  # delete
-			alignment2 = alignment2 + "_"
-			alignment1 = alignment1 + seq2[seq2Index]
+			alignment2 = alignment2 + seq2[seq2Index]
+			alignment1 = alignment1 + "-"
 			score += 5
 			vertIndex -= 1
 			seq2Index -= 1
 		elif path[vertIndex][horizIndex] == "s":  # swap
-			alignment2 = alignment2 + seq1[seq1Index]
-			alignment1 = alignment1 + seq2[seq2Index]
+			alignment2 = alignment2 + seq2[seq2Index]
+			alignment1 = alignment1 + seq1[seq1Index]
 			score += 1
 			horizIndex -= 1
 			vertIndex -= 1
@@ -177,6 +216,9 @@ def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
 
 	alignment1 = alignment1[::-1]
 	alignment2 = alignment2[::-1]
+
+	alignment1 = alignment1[0:100]
+	alignment2 = alignment2[0:100]
 
 	return score, alignment1, alignment2
 
@@ -209,7 +251,13 @@ class GeneSequencing:
 		if not banded:
 			score, alignment1, alignment2 = alignNotBanded(seq1, seq2, seq1Length, seq2Length)
 		else:
-			score, alignment1, alignment2 = alignBanded(seq1, seq2, seq1Length, seq2Length)
+			if seq1Length == seq2Length:
+				score, alignment1, alignment2 = alignBanded(seq1, seq2, seq1Length, seq2Length)
+			else:
+				score = math.inf
+				alignment1 = "No Alignment Possible"
+				alignment2 = "No Alignment Possible"
+
 
 		###################################################################################################
 
