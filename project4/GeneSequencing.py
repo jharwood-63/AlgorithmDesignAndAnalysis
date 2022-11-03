@@ -23,14 +23,14 @@ SUB = 1
 
 
 def alignBanded(seq1, seq2, seq1Length, seq2Length):
-	alignmentTable = [[math.inf] * 7 for _ in range(seq2Length)]
-	path = [[""] * 7 for _ in range(seq2Length)]
+	alignmentTable = [[math.inf] * 7 for _ in range(seq2Length)]  # Time: O(kn) Space: O(kn)
+	path = [[""] * 7 for _ in range(seq2Length)]  # Time: O(kn) Space: O(kn)
 
-	for j in range(3, 7):
+	for j in range(3, 7):  # O(1)
 		alignmentTable[0][j] = abs(j - 3) * INDEL
 
 	currIndex = 0
-	for i in range(3, 0, -1):
+	for i in range(3, 0, -1):  # O(1)
 		alignmentTable[i][currIndex] = i * INDEL
 		currIndex += 1
 
@@ -39,9 +39,9 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 	endIndex = 5
 	offsetStart = 1
 	offset = 1
-	for i in range(1, seq2Length):
+	for i in range(1, seq2Length):  # O(kn)
 		currIndex = startIndex
-		while currIndex < 7:
+		while currIndex < 7:  # O(k)
 			if i >= bottomRightStart and currIndex > endIndex:
 				currIndex += 7
 				continue
@@ -103,7 +103,7 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 	seq1Index = seq1Length - 2
 	alignment1 = ""
 	alignment2 = ""
-	for i in range(len(seq2)):
+	for i in range(len(seq2)):  # O(n)
 		if path[vertIndex][horizIndex] == "l":  # insert
 			alignment2 = alignment2 + "-"
 			alignment1 = alignment1 + seq1[seq1Index]
@@ -132,8 +132,8 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 			seq1Index -= 1
 			seq2Index -= 1
 
-	alignment1 = alignment1[::-1]
-	alignment2 = alignment2[::-1]
+	alignment1 = alignment1[::-1]  # O(n)
+	alignment2 = alignment2[::-1]  # O(n)
 
 	alignment1 = alignment1[0:100]
 	alignment2 = alignment2[0:100]
@@ -142,17 +142,17 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 
 
 def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
-	alignmentTable = [[0] * seq1Length for _ in range(seq2Length)]
-	path = [[""] * seq1Length for _ in range(seq2Length)]
+	alignmentTable = [[0] * seq1Length for _ in range(seq2Length)]  # Time: O(mn) Space: O(mn)
+	path = [[""] * seq1Length for _ in range(seq2Length)]  # Time: O(mn) Space: O(mn)
 
-	for i in range(seq2Length):
+	for i in range(seq2Length):  # O(m)
 		alignmentTable[i][0] = i * INDEL
 
-	for j in range(seq1Length):
+	for j in range(seq1Length):  # O(n)
 		alignmentTable[0][j] = j * INDEL
 
-	for i in range(1, seq2Length):
-		for j in range(1, seq1Length):
+	for i in range(1, seq2Length):  # O(m)
+		for j in range(1, seq1Length):  # O(n)
 			equality = seq2[i - 1] == seq1[j - 1]
 			if equality:
 				diagonal = MATCH + alignmentTable[i - 1][j - 1]
@@ -182,7 +182,7 @@ def alignNotBanded(seq1, seq2, seq1Length, seq2Length):
 	seq1Index = seq1Length - 2
 	alignment1 = ""
 	alignment2 = ""
-	for i in range(len(seq2)):
+	for i in range(len(seq2)):  # O(m)
 		if path[vertIndex][horizIndex] == "l":  # insert
 			alignment2 = alignment2 + "-"
 			alignment1 = alignment1 + seq1[seq1Index]
@@ -247,11 +247,11 @@ class GeneSequencing:
 			seq2Length = len(seq2) + 1
 
 		if not banded:
-			score, alignment1, alignment2 = alignNotBanded(seq1, seq2, seq1Length, seq2Length)
+			score, alignment1, alignment2 = alignNotBanded(seq1, seq2, seq1Length, seq2Length)  # O(mn)
 		else:
 			difference = abs(seq1Length - seq2Length)
 			if difference <= 1:
-				score, alignment1, alignment2 = alignBanded(seq1, seq2, seq1Length, seq2Length)
+				score, alignment1, alignment2 = alignBanded(seq1, seq2, seq1Length, seq2Length)  # O(kn)
 			else:
 				score = math.inf
 				alignment1 = "No Alignment Possible"
