@@ -1,5 +1,5 @@
-test1#chair
-test2#water
+test1#polynomial
+test2#exponential
 gi|15077808|gb|AF391541.1|Bovine coronavirus isolate BCoV-ENT, complete genome.#
 gattgcgagcgatttgcgtgcgtgcatcccgcttcactgatctcttgttagatcttttca
 taatctaaactttataaaaacatccactccctgtagtctatgcctgtgggcgtagatttt

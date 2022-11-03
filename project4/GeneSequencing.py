@@ -94,7 +94,10 @@ def alignBanded(seq1, seq2, seq1Length, seq2Length):
 			startIndex -= 1
 
 	vertIndex = seq2Length - 1
-	horizIndex = 3
+	if seq2Length == seq1Length:
+		horizIndex = 3
+	else:
+		horizIndex = 2
 	seq2Index = seq2Length - 2
 	seq1Index = seq1Length - 2
 	alignment1 = ""
@@ -251,7 +254,8 @@ class GeneSequencing:
 		if not banded:
 			score, alignment1, alignment2 = alignNotBanded(seq1, seq2, seq1Length, seq2Length)
 		else:
-			if seq1Length == seq2Length:
+			difference = abs(seq1Length - seq2Length)
+			if difference <= 1:
 				score, alignment1, alignment2 = alignBanded(seq1, seq2, seq1Length, seq2Length)
 			else:
 				score = math.inf
