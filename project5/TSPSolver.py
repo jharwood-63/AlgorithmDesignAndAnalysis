@@ -82,26 +82,47 @@ class TSPSolver:
 		algorithm</returns> 
 	'''
 
-	def greedy(self, time_allowance=60.0):
-		cities = self._scenario.getCities()
 	# 	start at the first city
 	# 	take the shortest path
 	# 	keep taking the shortest path until you make it back or can't go anywhere
+	# 	How do you get back to the start?
+	# 	How do you know if the path won't work?
+	# 	What do you do when the path doesn't work
+	def greedy(self, time_allowance=60.0):
+		cities = self._scenario.getCities()
 		for startIndex in range(len(cities)):
 			path = []
+			cost = 0
 			startCity = cities[startIndex]
 			path.append(startIndex)
-			lowestCost = math.inf
 			nextCityIndex = -1
 			while nextCityIndex != startIndex:
-				for i in range(1, len(cities)):  # this needs to be different, im not sure yet how
-					newCost = startCity.costTo(cities[i])
-					if newCost < lowestCost and not path.__contains__(i):
-						lowestCost = newCost
-						nextCityIndex = i
+				lowestCost = math.inf
+				for i in range(len(cities)):
+					if not path.__contains__(i):
+						newCost = startCity.costTo(cities[i])
+						if newCost < lowestCost:
+							lowestCost = newCost
+							nextCityIndex = i
+					elif len(path) == len(cities):
+						returnCost = cities[path[-1]].costTo(cities[startIndex])
+						if returnCost != math.inf:
+							cost += returnCost
+							path.append(startIndex)
+							nextCityIndex = startIndex
+						else:
+							print("The path doesn't work")
 
-				startCity = cities[nextCityIndex]
-				path.append(nextCityIndex)
+						break
+
+				if len(path) == (len(cities) + 1):
+					print("The path works")
+				elif lowestCost == math.inf:
+					print("Path doesn't work")
+				else:
+					startCity = cities[nextCityIndex]
+					path.append(nextCityIndex)
+					cost += lowestCost
 
 	
 	
