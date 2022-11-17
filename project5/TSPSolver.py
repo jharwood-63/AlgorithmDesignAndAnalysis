@@ -84,16 +84,24 @@ class TSPSolver:
 
 	def greedy(self, time_allowance=60.0):
 		cities = self._scenario.getCities()
-		BSSF = math.inf
-		path = []
-		costs = []
-		for startCity in cities:
+	# 	start at the first city
+	# 	take the shortest path
+	# 	keep taking the shortest path until you make it back or can't go anywhere
+		for startIndex in range(len(cities)):
 			path = []
-			for nextCity in cities:
-				path.append()
+			startCity = cities[startIndex]
+			path.append(startIndex)
+			lowestCost = math.inf
+			nextCityIndex = -1
+			while nextCityIndex != startIndex:
+				for i in range(1, len(cities)):  # this needs to be different, im not sure yet how
+					newCost = startCity.costTo(cities[i])
+					if newCost < lowestCost and not path.__contains__(i):
+						lowestCost = newCost
+						nextCityIndex = i
 
-			costs = []
-
+				startCity = cities[nextCityIndex]
+				path.append(nextCityIndex)
 
 	
 	
@@ -135,9 +143,6 @@ class TSPSolver:
 				parentMatrix[i, j] = cost
 
 
-
-
-
 class Path:
 	def __init__(self, parentMatrix, parentPath):
 		self.costMatrix = parentMatrix
@@ -145,10 +150,9 @@ class Path:
 		self.path = parentPath
 
 	def findLowerBound(self, newCityIndex, currCityIndex):
+		lowerBound = 0
 		if newCityIndex >= 0 and currCityIndex >= 0:
-			#  the row of the currCityIndex is all inf
-			#  the column of the newCityIndex is all inf
-			#  [newCityIndex, currCityIndex] = inf
+			lowerBound += self.costMatrix[currCityIndex, newCityIndex]
 			for i in range(np.shape(self.costMatrix)[0]):
 				self.costMatrix[currCityIndex, i] = np.inf
 
@@ -157,8 +161,6 @@ class Path:
 
 			self.costMatrix[newCityIndex, currCityIndex] = np.inf
 
-
-		lowerBound = 0
 		for i in range(np.shape(self.costMatrix)[0]):
 			minValue = min(self.costMatrix[i])
 			lowerBound += minValue
@@ -174,7 +176,7 @@ class Path:
 		return lowerBound
 
 	def updatePath(self, newCityIndex):
-		pass
+		self.path.append(newCityIndex)
 		
 
 
