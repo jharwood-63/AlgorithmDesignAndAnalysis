@@ -85,48 +85,65 @@ class TSPSolver:
 	# 	start at the first city
 	# 	take the shortest path
 	# 	keep taking the shortest path until you make it back or can't go anywhere
-	# 	How do you get back to the start?
-	# 	How do you know if the path won't work?
-	# 	What do you do when the path doesn't work
+	# 	How do you get back to the start? DONE
+	# 	How do you know if the path won't work? DONE
+	# 	What do you do when the path doesn't work? DONE
 	def greedy(self, time_allowance=60.0):
 		cities = self._scenario.getCities()
+		bssf = None
+		count = 0
+		results = {}
+		start_time = time.time()
 		for startIndex in range(len(cities)):
-			path = []
-			cost = 0
-			startCity = cities[startIndex]
-			path.append(startIndex)
-			nextCityIndex = -1
-			while nextCityIndex != startIndex:
-				lowestCost = math.inf
-				for i in range(len(cities)):
-					if not path.__contains__(i):
-						newCost = startCity.costTo(cities[i])
-						if newCost < lowestCost:
-							lowestCost = newCost
-							nextCityIndex = i
-					elif len(path) == len(cities):
-						returnCost = cities[path[-1]].costTo(cities[startIndex])
-						if returnCost != math.inf:
-							cost += returnCost
-							path.append(startIndex)
-							nextCityIndex = startIndex
-						else:
-							print("The path doesn't work")
+			if time.time() - start_time < time_allowance:
+				currRoute = None
+				path = []
+				cost = 0
+				startCity = cities[startIndex]
+				path.append(startCity)
+				nextCityIndex = -1
+				while nextCityIndex != startIndex:
+					lowestCost = math.inf
+					for i in range(len(cities)):
+						if not path.__contains__(cities[i]):
+							newCost = startCity.costTo(cities[i])
+							if newCost < lowestCost:
+								lowestCost = newCost
+								nextCityIndex = i
+						elif len(path) == len(cities):
+							returnCost = path[-1].costTo(path[0])
+							if returnCost != math.inf:
+								cost += returnCost
+							break
 
-						break
+					if len(path) == len(cities):
+						currRoute = TSPSolution(path)
+						nextCityIndex = startIndex
+						if currRoute.cost != math.inf:
+							count += 1
+					elif lowestCost == math.inf:
+						nextCityIndex = startIndex
+					else:
+						startCity = cities[nextCityIndex]
+						path.append(startCity)
+						cost += lowestCost
 
-				if len(path) == (len(cities) + 1):
-					print("The path works")
-				elif lowestCost == math.inf:
-					print("Path doesn't work")
-				else:
-					startCity = cities[nextCityIndex]
-					path.append(nextCityIndex)
-					cost += lowestCost
+				if currRoute is not None and (bssf is None or currRoute.cost < bssf.cost):
+					bssf = currRoute
+			else:
+				break
 
-	
-	
-	
+		end_time = time.time()
+		results['cost'] = math.inf if bssf is None else bssf.cost
+		results['time'] = end_time - start_time
+		results['count'] = count
+		results['soln'] = bssf
+		results['max'] = None
+		results['total'] = None
+		results['pruned'] = None
+		return results
+
+
 	''' <summary>
 		This is the entry point for the branch-and-bound algorithm that you will implement
 		</summary>
