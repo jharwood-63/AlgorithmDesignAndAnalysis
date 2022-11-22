@@ -15,16 +15,16 @@ import time
 import numpy as np
 from TSPClasses import *
 import math
-import heapq
+from heapq import *
 import itertools
 
 
 
 class TSPSolver:
-	def __init__( self, gui_view ):
+	def __init__(self, gui_view):
 		self._scenario = None
 
-	def setupWithScenario( self, scenario ):
+	def setupWithScenario(self, scenario):
 		self._scenario = scenario
 
 
@@ -39,7 +39,7 @@ class TSPSolver:
 		algorithm</returns> 
 	'''
 	
-	def defaultRandomTour( self, time_allowance=60.0 ):
+	def defaultRandomTour(self, time_allowance=60.0):
 		results = {}
 		cities = self._scenario.getCities()
 		ncities = len(cities)
@@ -153,9 +153,60 @@ class TSPSolver:
 		max queue size, total number of states created, and number of pruned states.</returns> 
 	'''
 		
-	def branchAndBound( self, time_allowance=60.0 ):
+	def branchAndBound(self, time_allowance=60.0):
+		# Add tuples to the priority queue, first value is lowerBound, second value is depth, third value is path object
+		bssf = self.greedy(time_allowance)['soln']
+		start_time = time.time()
+		cities = self._scenario.getCities()
+		results = {}
+		count = 0
+		maximum = 0
+		total = 0
+		pruned = 0
+		parentPath = [cities[0]]
+		parentIndices = [0]
+		priorityQueue = []
+		parentPathObj = Path(self.initializeParentMatrix(cities), parentPath, parentIndices, -1, -1, 0)
+		heappush(priorityQueue, parentPathObj)
+		while len(priorityQueue) != 0:
+			if time.time() - start_time < time_allowance:
+				currPath = heappop(priorityQueue)
+				if currPath.getLowerBound() <= bssf.cost:
+					currCityIndex = currPath.getIndices()[-1]
+					for nextCityIndex in range(len(cities)):
+						# Create all the children
+						if cities[currCityIndex].costTo(cities[nextCityIndex]) != math.inf:
+							newPath = currPath.getPath().copy()  # Possibly could add some time, might need to fix this
+							newPath.append(cities[nextCityIndex])
+							newIndices = currPath.getIndices().copy()
+							newIndices.append(nextCityIndex)
+							newMatrix = currPath.getCostMatrix().copy()
+							childPathObj = Path(newMatrix, newPath, newIndices, currCityIndex, nextCityIndex, currPath.getLowerBound())
+							if len(childPathObj.getPath()) == len(cities) and childPathObj.getLowerBound() <= bssf.cost:
+								bssf = TSPSolution(childPathObj.getPath())
+								count += 1
+								total += 1
+							elif childPathObj.getLowerBound() <= bssf.cost:
+								heappush(priorityQueue, childPathObj)
+								total += 1
+								if len(priorityQueue) > maximum:
+									maximum = len(priorityQueue)
+							else:
+								pruned += 1
+				else:
+					pruned += 1
 
-		pass
+		end_time = time.time()
+		results['cost'] = math.inf if bssf == math.inf else bssf.cost
+		results['time'] = end_time - start_time
+		results['count'] = count
+		results['soln'] = bssf
+		results['max'] = maximum
+		results['total'] = total
+		results['pruned'] = pruned
+
+		return results
+
 
 
 
@@ -172,46 +223,67 @@ class TSPSolver:
 		pass
 
 
-	def initializeParentMatrix(self):
-		cities = self._scenario.getCities()
+	def initializeParentMatrix(self, cities):
 		parentMatrix = np.empty([len(cities), len(cities)])
 		for i in range(len(cities)):
 			for j in range(len(cities)):
 				cost = cities[i].costTo(cities[j])
 				parentMatrix[i, j] = cost
 
+		return parentMatrix
+
 
 class Path:
-	def __init__(self, parentMatrix, parentPath):
+	def __init__(self, parentMatrix, path, indices, currCityIndex, nextCityIndex, currLowerBound):
 		self.costMatrix = parentMatrix
-		self.lowerBound = self.findLowerBound(-1, -1)
-		self.path = parentPath
+		self.lowerBound = self.findLowerBound(nextCityIndex, currCityIndex, currLowerBound)
+		self.path = path
+		self.indices = indices
 
-	def findLowerBound(self, newCityIndex, currCityIndex):
-		lowerBound = 0
-		if newCityIndex >= 0 and currCityIndex >= 0:
-			lowerBound += self.costMatrix[currCityIndex, newCityIndex]
+	def __lt__(self, otherPath):
+		if self.lowerBound != otherPath.lowerBound:
+			return self.lowerBound < otherPath.lowerBound
+		else:
+			return len(self.path) <= len(otherPath.path)
+
+	def findLowerBound(self, nextCityIndex, currCityIndex, lowerBound):
+		if nextCityIndex >= 0 and currCityIndex >= 0:
+			lowerBound += self.costMatrix[currCityIndex, nextCityIndex]
 			for i in range(np.shape(self.costMatrix)[0]):
 				self.costMatrix[currCityIndex, i] = np.inf
 
 			for i in range(np.shape(self.costMatrix)[0]):
-				self.costMatrix[i, newCityIndex] = np.inf
+				self.costMatrix[i, nextCityIndex] = np.inf
 
-			self.costMatrix[newCityIndex, currCityIndex] = np.inf
+			self.costMatrix[nextCityIndex, currCityIndex] = np.inf
 
 		for i in range(np.shape(self.costMatrix)[0]):
 			minValue = min(self.costMatrix[i])
-			lowerBound += minValue
-			for j in range(np.shape(self.costMatrix)[1]):
-				self.costMatrix[i, j] = self.costMatrix - minValue
+			if minValue != 0 and minValue != math.inf:
+				lowerBound += minValue
+				for j in range(np.shape(self.costMatrix)[1]):
+					self.costMatrix[i, j] = self.costMatrix[i, j] - minValue
 
 		for j in range(np.shape(self.costMatrix)[1]):
-			minValue = min(self.costMatrix[j])
-			lowerBound += minValue
-			for i in range(np.shape(self.costMatrix)[0]):
-				self.costMatrix[i, j] = self.costMatrix - minValue
+			minValue = min(self.costMatrix[:, j])
+			if minValue != 0 and minValue != math.inf:
+				lowerBound += minValue
+				for i in range(np.shape(self.costMatrix)[0]):
+					self.costMatrix[i, j] = self.costMatrix[i, j] - minValue
 
 		return lowerBound
+
+	def getCostMatrix(self):
+		return self.costMatrix
+
+	def getPath(self):
+		return self.path
+
+	def getIndices(self):
+		return self.indices
+
+	def getLowerBound(self):
+		return self.lowerBound
 
 	def updatePath(self, newCityIndex):
 		self.path.append(newCityIndex)
