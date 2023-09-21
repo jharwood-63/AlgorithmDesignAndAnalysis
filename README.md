@@ -1,4 +1,4 @@
-# cs312
+# Algoirthm Design and Analysis
 This repository contains projects from CS 312 Algorithm Design and Analysis
 The UI elements were provided, however all components of the algorithms were written by me.
 
